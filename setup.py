@@ -2,8 +2,6 @@ from setuptools import setup
 from codecs import open
 from os import path
 
-from peewee_moves import __version__
-
 root_dir = path.abspath(path.dirname(__file__))
 
 with open(path.join(root_dir, 'README.rst'), encoding='utf-8') as f:
@@ -15,7 +13,7 @@ with open(path.join(root_dir, 'requirements.txt'), encoding='utf-8') as f:
 
 setup(
     name='peewee-moves',
-    version=__version__,
+    version='2.0.1',
 
     description='Simple and flexible migration manager for Peewee ORM.',
     long_description=long_description,
