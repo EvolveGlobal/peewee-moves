@@ -837,16 +837,18 @@ class DatabaseManager:
 
         try:
             LOGGER.info('{}: {}'.format(direction, migration))
-            with self.database.transaction():
+            # Handle commit manually with autocommit
+            # This allows migrate methods to execute SQL outside transactions
+            # This use case is needed for CREATE INDEX CONCURRENTLY for postgresql which
+            # requires that the statement is run outside a transaction.
+            with self.database.manual_commit():
+                self.database.connection().autocommit = True
+                self.database.begin()
                 scope = {
                     '__file__': self.get_filename(migration),
                 }
                 with self.open_migration(migration, 'r') as handle:
                     exec(handle.read(), scope)
-
-                method = scope.get(direction, None)
-                if method:
-                    method(self.migrator)
 
                 if direction == 'upgrade':
                     MigrationHistory.create(name=migration)
@@ -854,6 +856,12 @@ class DatabaseManager:
                 if direction == 'downgrade':
                     instance = MigrationHistory.get(MigrationHistory.name == migration)
                     instance.delete_instance()
+
+                method = scope.get(direction, None)
+                if method:
+                    method(self.migrator)
+
+                self.database.commit()
 
         except Exception as exc:
             self.database.rollback()
